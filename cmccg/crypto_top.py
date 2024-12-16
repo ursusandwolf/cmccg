@@ -15,6 +15,28 @@ def read_symbols_from_file(file_path):
         symbols = file.read().splitlines()
     return [symbol.strip().upper() for symbol in symbols]
 
+def read_delisted_symbols(file_path):
+    """
+    Читает делистнутые символы из файла и возвращает их в виде словаря.
+
+    Аргументы:
+        file_path (str): Путь к файлу.
+
+    Возвращает:
+        dict: Словарь с биржами и их делистнутыми символами.
+    """
+    delisted = {}
+    with open(file_path, 'r') as file:
+        lines = file.read().splitlines()
+    for line in lines:
+        exchange, symbol = line.split(':')
+        exchange = exchange.strip().upper()
+        symbol = symbol.strip().upper()
+        if exchange not in delisted:
+            delisted[exchange] = set()
+        delisted[exchange].add(symbol)
+    return delisted
+
 def get_coingecko_top(limit=720):  # С запасом 20%
     url = "https://api.coingecko.com/api/v3/coins/markets"
     params = {

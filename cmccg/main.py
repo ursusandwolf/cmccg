@@ -2,7 +2,7 @@ import sys
 import os
 import pandas as pd
 import datetime
-from crypto_top import get_filtered_data
+from crypto_top import get_filtered_data, read_delisted_symbols
 from exchange_strategies import exchange_strategies, get_all_markets
 
 OUTPUT_DIR = 'out'
@@ -21,6 +21,9 @@ exchange_stats = {exchange: 0 for exchange in exchange_strategies.keys()}
 market_samples = {exchange: [] for exchange in exchange_strategies.keys()}
 processed_symbols = set()  # Множество для отслеживания обработанных символов
 
+# Чтение делистнутых символов из файла
+delisted_symbols = read_delisted_symbols('delisted.properties')
+
 def get_exchange_for_symbol(symbol, all_markets):
     """
     Определяет биржу, на которой торгуется символ и возвращает тип пары.
@@ -36,6 +39,10 @@ def get_exchange_for_symbol(symbol, all_markets):
         return 'PROCESSED', None  # Пропустить уже обработанный символ
 
     for exchange_name, markets in all_markets.items():
+        # Пропустить делистнутые символы
+        if exchange_name in delisted_symbols and symbol in delisted_symbols[exchange_name]:
+            continue
+
         strategy = exchange_strategies[exchange_name]
         pair = strategy.first_symbol_listed(symbol, markets)
         if pair:
