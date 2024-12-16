@@ -2,7 +2,7 @@ import sys
 import os
 import pandas as pd
 import datetime
-from crypto_top import get_filtered_data, read_delisted_symbols
+from crypto_top import get_filtered_data, read_delisted_symbols, read_rebranded_symbols
 from exchange_strategies import exchange_strategies, get_all_markets
 
 OUTPUT_DIR = 'out'
@@ -24,13 +24,18 @@ processed_symbols = set()  # Множество для отслеживания 
 # Чтение делистнутых символов из файла
 delisted_symbols = read_delisted_symbols('delisted.properties')
 
-def get_exchange_for_symbol(symbol, all_markets):
+# Чтение информации о ребрендинге символов из файла
+rebranding_symbols = read_rebranded_symbols('rebranded.properties')
+
+def get_exchange_for_symbol(symbol, all_markets, rebranded_symbols):
     """
-    Определяет биржу, на которой торгуется символ и возвращает тип пары.
+    Определяет биржу, на которой торгуется символ, и возвращает тип пары,
+    учитывая ребрендинг тикеров.
 
     Аргументы:
         symbol (str): Символ криптовалюты.
         all_markets (dict): Словарь с рынками для каждой биржи.
+        rebranded_symbols (dict): Словарь с ребрендингами тикеров.
 
     Возвращает:
         tuple: Название биржи и тип пары или ('NOTLISTED', None).
@@ -42,6 +47,9 @@ def get_exchange_for_symbol(symbol, all_markets):
         # Пропустить делистнутые символы
         if exchange_name in delisted_symbols and symbol in delisted_symbols[exchange_name]:
             continue
+        # Проверяем ребрендинг для текущей биржи
+        if exchange_name in rebranded_symbols and symbol in rebranded_symbols[exchange_name]:
+            symbol = rebranded_symbols[exchange_name][symbol]
 
         strategy = exchange_strategies[exchange_name]
         pair = strategy.first_symbol_listed(symbol, markets)
@@ -157,7 +165,12 @@ def save_to_file(limit=LIMIT):
     CHUNK_SIZE = 120
     filtered_df = get_filtered_data(limit)
 
-    filtered_df['exchange'], filtered_df['pair'] = zip(*filtered_df['symbol'].apply(get_exchange_for_symbol, args=(all_markets,)))
+    # Чтение ребрендингов
+    rebranded_symbols = read_rebranded_symbols('rebranded.properties')
+
+    # Применение ребрендинга
+    filtered_df['exchange'], filtered_df['pair'] = zip(*filtered_df['symbol'].apply(
+        get_exchange_for_symbol, args=(all_markets, rebranded_symbols)))
 
     filtered_df = filtered_df[filtered_df['exchange'] != 'PROCESSED']  # Исключить обработанные символы
     save_not_listed(filtered_df)

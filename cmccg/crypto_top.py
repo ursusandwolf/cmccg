@@ -37,6 +37,33 @@ def read_delisted_symbols(file_path):
         delisted[exchange].add(symbol)
     return delisted
 
+def read_rebranded_symbols(file_path):
+    """
+    Читает данные о ребрендинге тикеров и возвращает их в виде словаря.
+
+    Аргументы:
+        file_path (str): Путь к файлу.
+
+    Возвращает:
+        dict: Словарь с ребрендингами тикеров для каждой биржи.
+    """
+    rebranded = {}
+    with open(file_path, 'r') as file:
+        lines = file.read().splitlines()
+
+    for line in lines:
+        exchange, old_symbol, new_symbol = line.split(':')
+        exchange = exchange.strip().upper()
+        old_symbol = old_symbol.strip().upper()
+        new_symbol = new_symbol.strip().upper()
+
+        if exchange not in rebranded:
+            rebranded[exchange] = {}
+
+        rebranded[exchange][old_symbol] = new_symbol
+    return rebranded
+
+
 def get_coingecko_top(limit=720):  # С запасом 20%
     url = "https://api.coingecko.com/api/v3/coins/markets"
     params = {
