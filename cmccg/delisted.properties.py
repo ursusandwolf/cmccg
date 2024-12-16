@@ -1,0 +1,2 @@
+Binance:XMR
+Kraken:XMR
